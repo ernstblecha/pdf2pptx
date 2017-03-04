@@ -27,7 +27,7 @@ if [ -d $tempname ]; then
 	rm -rf $tempname
 fi
 
-mkdir $tempname
+mkdir $tempname -p
 convert -density $density -depth 8 -resize "x${resolution}" $1 ./$tempname/slide.png
 
 if [ $? -eq 0 ]; then
@@ -42,7 +42,7 @@ fout="$1.pptx"
 rm -rf $pptname
 cp -r template $pptname
 
-mkdir $pptname/ppt/media
+mkdir $pptname/ppt/media -p
 
 cp ./$tempname/*.png "$pptname/ppt/media/"
 
