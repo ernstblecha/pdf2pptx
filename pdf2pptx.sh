@@ -1,46 +1,79 @@
 #!/bin/bash
 # Alireza Shafaei - shafaei@cs.ubc.ca - Jan 2016
+# Forked by Jasper Chan - jasper.chan@alumni.ubc.ca - Nov 2017
 
 resolution=1024
 density=300
 #colorspace="-depth 8"
 colorspace="-colorspace sRGB -background white -alpha remove"
-makeWide=true
+makewide=false
+nobar=true
+istex=false
+filename=
 
 if [ $# -eq 0 ]; then
     echo "No arguments supplied!"
-    echo "Usage: ./pdf2pptx.sh file.pdf"
-    echo "			Generates file.pdf.pptx in widescreen format (by default)"
-    echo "       ./pdf2pptx.sh file.pdf notwide"
-    echo "			Generates file.pdf.pptx in 4:3 format"
+    echo "Usage: ./pdf2pptx.sh [options] file"
+    echo "Generates file.pdf.pptx from a beamer tex/pdf file"
+    echo ""
+    echo "Options:"
+    echo "-w, --wide        Render pptx for widescreen format"
+    echo "-b, --bar         Include beamer's navigation bar (only works on .tex files)"
     exit 1
 fi
 
-if [ $# -eq 2 ]; then
-	if [ "$2" == "notwide" ]; then
-		makeWide=false
-	fi
+while [ "$1" != "" ]; do
+    case $1 in
+        -w | --wide )   makewide=true
+                        ;;
+        -b | --bar )    nobar=false
+                        ;;
+        * )             filename=$1
+    esac
+    shift
+done
+
+if [ ${filename: -4} == ".tex" ]; then
+    istex=true
+    cp $filename "$filename.orig"
+    if [ $nobar = true ]; then
+        echo "Removing the navigation bar from your tex file..."
+        sed -i 's/\documentclass{beamer}/\documentclass{beamer}\n\\beamertemplatenavigationsymbolsempty/' $filename
+    fi
+    echo "Rendering .tex file..."
+    latexmk -pdf $1
+    latexmk -c $1
+    mv "$filename.orig" $filename
+    filename="${filename::-4}.pdf"
+    echo "Checking for $filename"
+    if [ ! -f $filename ]; then
+        echo "File not found, check if it was rendered successfully?"
+        exit
+    fi
+    echo "File found!"
+elif [ $nobar = true ]; then
+    echo "Warning: Can't remove the navigation bar from a pdf."
 fi
 
-echo "Doing $1"
-tempname="$1.temp"
+echo "Converting $filename..."
+tempname="$filename.temp"
 if [ -d $tempname ]; then
 	echo "Removing ${tempname}"
 	rm -rf $tempname
 fi
 
 mkdir $tempname
-convert -density $density $colorspace -resize "x${resolution}" $1 ./$tempname/slide.png
+convert -density $density $colorspace -resize "x${resolution}" $filename ./$tempname/slide.png
 
 if [ $? -eq 0 ]; then
-	echo "Extraction succ!"
+	echo "Extraction success!"
 else
 	echo "Error with extraction"
 	exit
 fi
 
-pptname="$1.pptx.base"
-fout="$1.pptx"
+pptname="$filename.pptx.base"
+fout="$filename.pptx"
 rm -rf $pptname
 cp -r template $pptname
 
@@ -83,7 +116,7 @@ do
 	make_slide $slide
 done
 
-if [ "$makeWide" = true ]; then
+if [ "$makewide" = true ]; then
 	pat='<p:sldSz cx=\"9144000\" cy=\"6858000\" type=\"screen4x3\"\/>'
 	wscreen='<p:sldSz cy=\"6858000\" cx=\"12192000\"\/>'
 	sed -i "s/${pat}/${wscreen}/g" ../presentation.xml
