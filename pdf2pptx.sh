@@ -30,7 +30,7 @@ if [ -d $tempname ]; then
 fi
 
 mkdir $tempname
-convert -density $density $colorspace -resize "x${resolution}" $1 ./$tempname/slide.png
+pdftoppm -r $density -png $1 ./$tempname/slide
 
 if [ $? -eq 0 ]; then
 	echo "Extraction succ!"
@@ -71,7 +71,7 @@ function add_slide {
 
 function make_slide {
 	cp ../slides/slide1.xml ../slides/slide-$1.xml
-	cat ../slides/_rels/slide1.xml.rels | sed "s/image1\.JPG/slide-${slide}.png/g" > ../slides/_rels/slide-$1.xml.rels
+	cat ../slides/_rels/slide1.xml.rels | sed "s/image1\.JPG/slide-$(expr ${slide} + 1).png/g" > ../slides/_rels/slide-$1.xml.rels
 	add_slide $1
 }
 
