@@ -34,7 +34,7 @@ convert: no images defined `./test.pdf.temp/slide.png' @ error/convert.c/Convert
 Error with extraction
 ```
 
-in `/etc/ImageMagick-6/policy.xml` or `/etc/ImageMagick/policy.xml`, change:
+in `/etc/ImageMagick-6/policy.xml` or `/etc/ImageMagick/policy.xml` (`/usr/local/Cellar/imagemagick/7.0.7-4/etc/ImageMagick-7/policy.xml` for MacOS & brew), change:
 
 ```XML
 <policy domain="coder" rights="none" pattern="PDF" />
