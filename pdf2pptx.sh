@@ -73,9 +73,9 @@ function make_slide {
 	add_slide "$1"
 }
 
-count=`ls -ltr | wc -l`
-for (( slide=$count-2; slide>=0; slide-- ))
 pushd "$pptname/ppt/media/" || exit
+count=$(find . -maxdepth 1 -name "*.png" -printf '%i\n' | wc -l)
+for (( slide=count-1; slide>=0; slide-- ))
 do
 	echo "Processing $slide"
 	make_slide "$slide"
