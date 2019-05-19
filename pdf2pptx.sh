@@ -75,7 +75,7 @@ function make_slide {
 
 count=`ls -ltr | wc -l`
 for (( slide=$count-2; slide>=0; slide-- ))
-pushd "$pptname/ppt/media/"
+pushd "$pptname/ppt/media/" || exit
 do
 	echo "Processing $slide"
 	make_slide "$slide"
@@ -86,12 +86,12 @@ if [ "$makeWide" = true ]; then
 	wscreen='<p:sldSz cy=\"6858000\" cx=\"12192000\"\/>'
 	sed -i "s/${pat}/${wscreen}/g" ../presentation.xml
 fi
-popd
+popd || exit
 
-pushd "$pptname"
+pushd "$pptname" || exit
 rm -rf "../$fout"
 zip -q -r "../$fout" .
-popd
+popd || exit
 
 rm -rf "$pptname"
 rm -rf "$tempname"
