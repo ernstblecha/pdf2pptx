@@ -24,30 +24,28 @@ fi
 
 echo "Doing $1"
 tempname="$1.temp"
-if [ -d $tempname ]; then
+if [ -d "$tempname" ]; then
 	echo "Removing ${tempname}"
-	rm -rf $tempname
+	rm -rf "$tempname"
 fi
 
-mkdir $tempname
-convert -density $density $colorspace -resize "x${resolution}" $1 ./$tempname/slide.png
-
-if [ $? -eq 0 ]; then
+mkdir "$tempname"
+# $colorspace may contain multiple parameters passed to convert
+# shellcheck disable=SC2086
+if convert -density "$density" $colorspace -resize "x${resolution}" "$1" "./$tempname/slide.png"; then
 	echo "Extraction succ!"
 else
 	echo "Error with extraction"
 	exit
 fi
 
-pptname="$1.pptx.base"
-fout="$1.pptx"
-rm -rf $pptname
-cp -r template $pptname
+pptname=$1.pptx.base
+fout=$1.pptx
+rm -rf "$pptname"
+cp -r template "$pptname"
 
-mkdir $pptname/ppt/media
-
-cp ./$tempname/*.png "$pptname/ppt/media/"
-
+mkdir "$pptname/ppt/media"
+cp "./$tempname/"*".png" "$pptname/ppt/media/"
 function add_slide {
 	pat='slide1\.xml\"\/>'
 	id=$1
@@ -70,17 +68,17 @@ function add_slide {
 }
 
 function make_slide {
-	cp ../slides/slide1.xml ../slides/slide-$1.xml
-	cat ../slides/_rels/slide1.xml.rels | sed "s/image1\.JPG/slide-${slide}.png/g" > ../slides/_rels/slide-$1.xml.rels
-	add_slide $1
+	cp ../slides/slide1.xml "../slides/slide-$1.xml"
+	sed "s/image1\.JPG/slide-${slide}.png/g" ../slides/_rels/slide1.xml.rels > "../slides/_rels/slide-$1.xml.rels"
+	add_slide "$1"
 }
 
-pushd $pptname/ppt/media/
 count=`ls -ltr | wc -l`
 for (( slide=$count-2; slide>=0; slide-- ))
+pushd "$pptname/ppt/media/"
 do
-	echo "Processing "$slide
-	make_slide $slide
+	echo "Processing $slide"
+	make_slide "$slide"
 done
 
 if [ "$makeWide" = true ]; then
@@ -90,10 +88,10 @@ if [ "$makeWide" = true ]; then
 fi
 popd
 
-pushd $pptname
-rm -rf ../$fout
-zip -q -r ../$fout .
+pushd "$pptname"
+rm -rf "../$fout"
+zip -q -r "../$fout" .
 popd
 
-rm -rf $pptname
-rm -rf $tempname
+rm -rf "$pptname"
+rm -rf "$tempname"
