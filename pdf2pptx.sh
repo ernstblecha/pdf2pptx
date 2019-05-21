@@ -448,7 +448,7 @@ pushd "$tempname/ppt/media/" || exit 1
 	if [ "$makeWide" = true ]; then
 		pat='<p:sldSz cx=\"9144000\" cy=\"6858000\" type=\"screen4x3\"\/>'
 		wscreen='<p:sldSz cy=\"6858000\" cx=\"12192000\"\/>'
-		sed -i '' "s/${pat}/${wscreen}/g" ../presentation.xml
+		{$sed} -i '' "s/${pat}/${wscreen}/g" ../presentation.xml
 	fi
 
 	convert -resize 256x slide-0.png ../../docProps/thumbnail.jpeg
