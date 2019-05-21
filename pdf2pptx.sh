@@ -434,9 +434,9 @@ rm "$tempname/template.zip"
 # $colorspace may contain multiple parameters passed to convert
 # shellcheck disable=SC2086
 if convert -density "$density" $colorspace -resize "x${resolution}" "$1" "$tempname/ppt/media/slide.png"; then
-	echo "Extraction succ!"
+	echo "Extraction successful!"
 else
-	echo "Error with extraction"
+	echo "Error during extraction"
 	exit 1
 fi
 
