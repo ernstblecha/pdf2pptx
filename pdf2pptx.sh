@@ -22,12 +22,6 @@ if [ $# -eq 2 ]; then
 	fi
 fi
 
-if [ $# -eq 2 ]; then
-	if [ "$2" == "notwide" ]; then
-		makeWide=false
-	fi
-fi
-
 tempname=$(mktemp -d 2>/dev/null || mktemp -d -t 'tmp')
 fout="$(pwd)/$(basename $1).pptx"
 
