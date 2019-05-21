@@ -56,8 +56,6 @@ fi
 
 cp -r template "$tempname"
 
-mkdir "$tempname/ppt/media"
-cp "$tempname/"*".png" "$tempname/ppt/media/"
 function add_slide {
 	pat='slide1\.xml\"\/>'
 	id=$1
