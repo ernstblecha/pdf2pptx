@@ -3,8 +3,6 @@
 
 resolution=1024
 density=300
-#colorspace="-depth 8"
-colorspace="-colorspace sRGB -background white -alpha remove"
 makeWide=true
 
 sed="${SED-sed}"
@@ -419,7 +417,7 @@ function add_slide {
 
 function make_slide {
 	cp ../slides/slide1.xml "../slides/slide-$1.xml"
-	"${sed}" "s/image1\.JPG/slide-${slide}.png/g" ../slides/_rels/slide1.xml.rels > "../slides/_rels/slide-$1.xml.rels"
+	"${sed}" "s/image1\.JPG/slide-$slide.png/g" ../slides/_rels/slide1.xml.rels > "../slides/_rels/slide-$1.xml.rels"
 	add_slide "$1"
 }
 
@@ -431,18 +429,20 @@ templatedata | base64 -d > "$tempname/template.zip"
 unzip -q "$tempname/template.zip" -d "$tempname"
 rm "$tempname/template.zip"
 
-# $colorspace may contain multiple parameters passed to convert
-# shellcheck disable=SC2086
-if convert -density "$density" $colorspace -resize "x${resolution}" "$1" "$tempname/ppt/media/slide.png"; then
+
+if pdftoppm -r "$density" -scale-to "$resolution" -png "$1" "$tempname/ppt/media/slide"; then
 	echo "Extraction successful!"
 else
 	echo "Error during extraction"
 	exit 1
 fi
 
+pdftoppm -r "$density" -scale-to-x 256 -scale-to-y -1 -singlefile -jpeg "$1" "$tempname/docProps/thumbnail"
+mv "$tempname/docProps/thumbnail.jpg" "$tempname/docProps/thumbnail.jpeg"
+
 pushd "$tempname/ppt/media/" || exit 1
 	count=$(find . -maxdepth 1 -name "*.png" -printf '%i\n' | wc -l)
-	for (( slide=count-1; slide>=0; slide-- )); do
+	for (( slide=count; slide>=1; slide-- )); do
 		echo "Processing $slide"
 		make_slide "$slide"
 	done
@@ -452,9 +452,6 @@ pushd "$tempname/ppt/media/" || exit 1
 		wscreen='<p:sldSz cy=\"6858000\" cx=\"12192000\"\/>'
 		"${sed}" -i'' "s/${pat}/${wscreen}/g" ../presentation.xml
 	fi
-
-	convert -resize 256x slide-0.png ../../docProps/thumbnail.jpeg
-
 popd || exit 1
 
 pushd "$tempname" || exit 1
