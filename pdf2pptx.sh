@@ -23,7 +23,7 @@ if [ $# -eq 2 ]; then
 fi
 
 tempname=$(mktemp -d 2>/dev/null || mktemp -d -t 'tmp')
-fout="$(pwd)/$(basename $1).pptx"
+fout="$(pwd)/$(basename "$1").pptx"
 
 # deletes the temp directory on exit
 # based on https://stackoverflow.com/questions/4632028/how-to-create-a-temporary-directory#34676160
@@ -455,6 +455,6 @@ pushd "$tempname/ppt/media/" || exit 1
 popd || exit 1
 
 pushd "$tempname" || exit 1
-	rm -f $fout
+	rm -f "$fout"
 	zip -q -r "$fout" .
 popd || exit 1
