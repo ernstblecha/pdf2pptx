@@ -95,5 +95,3 @@ pushd "$tempname" || exit 1
 	rm $fout
 	zip -q -r "$fout" .
 popd || exit 1
-
-rm -rf "$tempname"
