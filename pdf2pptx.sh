@@ -89,6 +89,9 @@ pushd "$tempname/ppt/media/" || exit 1
 		wscreen='<p:sldSz cy=\"6858000\" cx=\"12192000\"\/>'
 		sed -i "s/${pat}/${wscreen}/g" ../presentation.xml
 	fi
+
+	convert -resize 256x slide-0.png ../../docProps/thumbnail.jpeg
+
 popd || exit 1
 
 pushd "$tempname" || exit 1
