@@ -47,20 +47,18 @@ fi
 
 # $colorspace may contain multiple parameters passed to convert
 # shellcheck disable=SC2086
-if convert -density "$density" $colorspace -resize "x${resolution}" "$1" "$tempname/slide.png"; then
+if convert -density "$density" $colorspace -resize "x${resolution}" "$1" "$tempname/ppt/media/slide.png"; then
 	echo "Extraction succ!"
 else
 	echo "Error with extraction"
 	exit 1
 fi
 
-pptname=$1.pptx.base
 fout=$1.pptx
-rm -rf "$pptname"
-cp -r template "$pptname"
+cp -r template "$tempname"
 
-mkdir "$pptname/ppt/media"
-cp "$tempname/"*".png" "$pptname/ppt/media/"
+mkdir "$tempname/ppt/media"
+cp "$tempname/"*".png" "$tempname/ppt/media/"
 function add_slide {
 	pat='slide1\.xml\"\/>'
 	id=$1
@@ -88,7 +86,7 @@ function make_slide {
 	add_slide "$1"
 }
 
-pushd "$pptname/ppt/media/" || exit
+pushd "$tempname/ppt/media/" || exit
 	count=$(find . -maxdepth 1 -name "*.png" -printf '%i\n' | wc -l)
 	for (( slide=count-1; slide>=0; slide-- )); do
 		echo "Processing $slide"
@@ -102,9 +100,9 @@ pushd "$pptname/ppt/media/" || exit
 	fi
 popd || exit 1
 
-pushd "$pptname" || exit
+pushd "$tempname" || exit
 	rm -rf "../$fout"
 	zip -q -r "../$fout" .
 popd || exit 1
 
-rm -rf "$pptname"
+rm -rf "$tempname"
