@@ -54,7 +54,6 @@ else
 	exit 1
 fi
 
-fout=$1.pptx
 cp -r template "$tempname"
 
 mkdir "$tempname/ppt/media"
