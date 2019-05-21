@@ -39,17 +39,6 @@ else
 	trap cleanup EXIT
 fi
 
-# $colorspace may contain multiple parameters passed to convert
-# shellcheck disable=SC2086
-if convert -density "$density" $colorspace -resize "x${resolution}" "$1" "$tempname/ppt/media/slide.png"; then
-	echo "Extraction succ!"
-else
-	echo "Error with extraction"
-	exit 1
-fi
-
-cp -r template "$tempname"
-
 function add_slide {
 	pat='slide1\.xml\"\/>'
 	id=$1
@@ -76,6 +65,17 @@ function make_slide {
 	sed "s/image1\.JPG/slide-${slide}.png/g" ../slides/_rels/slide1.xml.rels > "../slides/_rels/slide-$1.xml.rels"
 	add_slide "$1"
 }
+
+# $colorspace may contain multiple parameters passed to convert
+# shellcheck disable=SC2086
+if convert -density "$density" $colorspace -resize "x${resolution}" "$1" "$tempname/ppt/media/slide.png"; then
+	echo "Extraction succ!"
+else
+	echo "Error with extraction"
+	exit 1
+fi
+
+cp -r template "$tempname"
 
 pushd "$tempname/ppt/media/" || exit 1
 	count=$(find . -maxdepth 1 -name "*.png" -printf '%i\n' | wc -l)
