@@ -458,6 +458,6 @@ pushd "$tempname/ppt/media/" || exit 1
 popd || exit 1
 
 pushd "$tempname" || exit 1
-	rm $fout
+	rm -f $fout
 	zip -q -r "$fout" .
 popd || exit 1
