@@ -8,12 +8,12 @@ colorspace="-colorspace sRGB -background white -alpha remove"
 makeWide=true
 
 if [ $# -eq 0 ]; then
-    echo "No arguments supplied!"
-    echo "Usage: ./pdf2pptx.sh file.pdf"
-    echo "			Generates file.pdf.pptx in widescreen format (by default)"
-    echo "       ./pdf2pptx.sh file.pdf notwide"
-    echo "			Generates file.pdf.pptx in 4:3 format"
-    exit 1
+	echo "No arguments supplied!"
+	echo "Usage: ./pdf2pptx.sh file.pdf"
+	echo "       .Generates file.pdf.pptx in widescreen format (by default)"
+	echo "       ./pdf2pptx.sh file.pdf notwide"
+	echo "       .Generates file.pdf.pptx in 4:3 format"
+	exit 1
 fi
 
 if [ $# -eq 2 ]; then
@@ -36,7 +36,7 @@ if convert -density "$density" $colorspace -resize "x${resolution}" "$1" "./$tem
 	echo "Extraction succ!"
 else
 	echo "Error with extraction"
-	exit
+	exit 1
 fi
 
 pptname=$1.pptx.base
@@ -74,24 +74,23 @@ function make_slide {
 }
 
 pushd "$pptname/ppt/media/" || exit
-count=$(find . -maxdepth 1 -name "*.png" -printf '%i\n' | wc -l)
-for (( slide=count-1; slide>=0; slide-- ))
-do
-	echo "Processing $slide"
-	make_slide "$slide"
-done
+	count=$(find . -maxdepth 1 -name "*.png" -printf '%i\n' | wc -l)
+	for (( slide=count-1; slide>=0; slide-- )); do
+		echo "Processing $slide"
+		make_slide "$slide"
+	done
 
-if [ "$makeWide" = true ]; then
-	pat='<p:sldSz cx=\"9144000\" cy=\"6858000\" type=\"screen4x3\"\/>'
-	wscreen='<p:sldSz cy=\"6858000\" cx=\"12192000\"\/>'
-	sed -i "s/${pat}/${wscreen}/g" ../presentation.xml
-fi
-popd || exit
+	if [ "$makeWide" = true ]; then
+		pat='<p:sldSz cx=\"9144000\" cy=\"6858000\" type=\"screen4x3\"\/>'
+		wscreen='<p:sldSz cy=\"6858000\" cx=\"12192000\"\/>'
+		sed -i "s/${pat}/${wscreen}/g" ../presentation.xml
+	fi
+popd || exit 1
 
 pushd "$pptname" || exit
-rm -rf "../$fout"
-zip -q -r "../$fout" .
-popd || exit
+	rm -rf "../$fout"
+	zip -q -r "../$fout" .
+popd || exit 1
 
 rm -rf "$pptname"
 rm -rf "$tempname"
