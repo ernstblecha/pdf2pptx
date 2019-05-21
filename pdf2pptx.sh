@@ -66,6 +66,8 @@ function make_slide {
 	add_slide "$1"
 }
 
+cp -r template "$tempname"
+
 # $colorspace may contain multiple parameters passed to convert
 # shellcheck disable=SC2086
 if convert -density "$density" $colorspace -resize "x${resolution}" "$1" "$tempname/ppt/media/slide.png"; then
@@ -74,8 +76,6 @@ else
 	echo "Error with extraction"
 	exit 1
 fi
-
-cp -r template "$tempname"
 
 pushd "$tempname/ppt/media/" || exit 1
 	count=$(find . -maxdepth 1 -name "*.png" -printf '%i\n' | wc -l)
