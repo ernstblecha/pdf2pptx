@@ -22,17 +22,32 @@ if [ $# -eq 2 ]; then
 	fi
 fi
 
-echo "Doing $1"
-tempname="$1.temp"
-if [ -d "$tempname" ]; then
-	echo "Removing ${tempname}"
-	rm -rf "$tempname"
+if [ $# -eq 2 ]; then
+	if [ "$2" == "notwide" ]; then
+		makeWide=false
+	fi
 fi
 
-mkdir "$tempname"
+tempname=$(mktemp -d 2>/dev/null || mktemp -d -t 'tmp')
+fout="$(pwd)/$(basename $1).pptx"
+
+# deletes the temp directory on exit
+# based on https://stackoverflow.com/questions/4632028/how-to-create-a-temporary-directory#34676160
+function cleanup {
+	rm -rf "$tempname"
+}
+
+# check if tmp dir was created
+if [[ ! "$tempname" || ! -d "$tempname" ]]; then
+	echo "Could not create tempdir"
+	exit 1
+else
+	trap cleanup EXIT
+fi
+
 # $colorspace may contain multiple parameters passed to convert
 # shellcheck disable=SC2086
-if convert -density "$density" $colorspace -resize "x${resolution}" "$1" "./$tempname/slide.png"; then
+if convert -density "$density" $colorspace -resize "x${resolution}" "$1" "$tempname/slide.png"; then
 	echo "Extraction succ!"
 else
 	echo "Error with extraction"
@@ -45,7 +60,7 @@ rm -rf "$pptname"
 cp -r template "$pptname"
 
 mkdir "$pptname/ppt/media"
-cp "./$tempname/"*".png" "$pptname/ppt/media/"
+cp "$tempname/"*".png" "$pptname/ppt/media/"
 function add_slide {
 	pat='slide1\.xml\"\/>'
 	id=$1
@@ -93,4 +108,3 @@ pushd "$pptname" || exit
 popd || exit 1
 
 rm -rf "$pptname"
-rm -rf "$tempname"
