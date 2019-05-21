@@ -66,7 +66,7 @@ function make_slide {
 	add_slide "$1"
 }
 
-cp -r template "$tempname"
+cp -r $(dirname $(realpath "$0"))"/template/"* "$tempname"
 
 # $colorspace may contain multiple parameters passed to convert
 # shellcheck disable=SC2086
