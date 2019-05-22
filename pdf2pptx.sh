@@ -396,7 +396,7 @@ TEMPLATE
 
 function add_slide {
 	pat='slide1\.xml\"\/>'
-	id=$1
+	id=${1#0}
 	id=$((id+8))
 	entry='<Relationship Id=\"rId'$id'\" Type=\"http:\/\/schemas\.openxmlformats\.org\/officeDocument\/2006\/relationships\/slide\" Target=\"slides\/slide-'$1'\.xml"\/>'
 	rep="${pat}${entry}"
@@ -407,7 +407,7 @@ function add_slide {
 	rep="${pat}${entry}"
 	"${sed}" -i'' "s/${pat}/${rep}/g" ../../\[Content_Types\].xml
 
-	sid=$1
+	sid=${1#0}
 	sid=$((sid+256))
 	pat='<p:sldIdLst>'
 	entry='<p:sldId id=\"'$sid'\" r:id=\"rId'$id'\"\/>'
@@ -442,7 +442,7 @@ mv "$tempname/docProps/thumbnail.jpg" "$tempname/docProps/thumbnail.jpeg"
 
 pushd "$tempname/ppt/media/" || exit 1
 	count=$(find . -maxdepth 1 -name "*.png" -printf '%i\n' | wc -l)
-	for (( slide=count; slide>=1; slide-- )); do
+	for slide in $(seq -w $count -1 1); do
 		echo "Processing $slide"
 		make_slide "$slide"
 	done
