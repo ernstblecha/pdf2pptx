@@ -5,8 +5,6 @@ resolution=1024
 density=300
 makeWide=true
 
-sed="${SED-sed}"
-
 if [ $# -eq 0 ]; then
 	echo "No arguments supplied!"
 	echo "Usage: ./pdf2pptx.sh file.pdf"
@@ -40,7 +38,7 @@ else
 fi
 
 function templatedata {
-	# files from "template/" zipped and base64 encoded
+	# files from "template.zip"  base64 encoded
 	cat <<TEMPLATE
 UEsDBBQAAAAIADm1s06QrFwRhwEAAOAGAAATABwAW0NvbnRlbnRfVHlwZXNdLnhtbFVUCQADjb/h
 XI2/4Vx1eAsAAQToAwAABOgDAAC1VclOwzAQvfMVka8occsBIdS0BzYJsVSifIBJJqnBsS3bLc3f
@@ -394,31 +392,58 @@ QEMAAAAA
 TEMPLATE
 }
 
-function add_slide {
-	pat='slide1\.xml\"\/>'
-	id=${1#0}
-	id=$((id+8))
-	entry='<Relationship Id=\"rId'$id'\" Type=\"http:\/\/schemas\.openxmlformats\.org\/officeDocument\/2006\/relationships\/slide\" Target=\"slides\/slide-'$1'\.xml"\/>'
-	rep="${pat}${entry}"
-	"${sed}" -i'' "s/${pat}/${rep}/g" ../_rels/presentation.xml.rels
+function slideXmlTemplate {
+	cat <<TEMPLATE
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:bg><p:bgPr><a:blipFill dpi="0" rotWithShape="1"><a:blip r:embed="rId2"><a:lum/></a:blip><a:srcRect/><a:stretch><a:fillRect/></a:stretch></a:blipFill><a:effectLst/></p:bgPr></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree><p:extLst><p:ext uri="{BB962C8B-B14F-4D97-AF65-F5344CB8AC3E}"><p14:creationId xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" val="4032986112"/></p:ext></p:extLst></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>
+TEMPLATE
+}
 
-	pat='slide1\.xml\" ContentType=\"application\/vnd\.openxmlformats-officedocument\.presentationml\.slide+xml\"\/>'
-	entry='<Override PartName=\"\/ppt\/slides\/slide-'$1'\.xml\" ContentType=\"application\/vnd\.openxmlformats-officedocument\.presentationml\.slide+xml\"\/>'
-	rep="${pat}${entry}"
-	"${sed}" -i'' "s/${pat}/${rep}/g" ../../\[Content_Types\].xml
+function slideXmlRelTemplate {
+	local num=$1
+	cat <<TEMPLATE
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/slide-${num}.png"/><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/></Relationships>
+TEMPLATE
+}
 
-	sid=${1#0}
-	sid=$((sid+256))
-	pat='<p:sldIdLst>'
-	entry='<p:sldId id=\"'$sid'\" r:id=\"rId'$id'\"\/>'
-	rep="${pat}${entry}"
-	"${sed}" -i'' "s/${pat}/${rep}/g" ../presentation.xml
+function presentationXmlRelsTemplate {
+	local list=$1
+	cat <<TEMPLATE
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId7" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles" Target="tableStyles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/>${list}<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/><Relationship Id="rId6" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/><Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps" Target="viewProps.xml"/><Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps" Target="presProps.xml"/></Relationships>
+TEMPLATE
+}
+
+function contentTypesXmlTemplate {
+	local list=$1
+	cat <<TEMPLATE
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="png" ContentType="image/png"/><Default Extension="jpeg" ContentType="image/jpeg"/><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="JPG" ContentType="image/jpeg"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slides/slide1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>${list}<Override PartName="/ppt/presProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presProps+xml"/><Override PartName="/ppt/viewProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.viewProps+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/><Override PartName="/ppt/tableStyles.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>
+TEMPLATE
+}
+
+function presentationXmlTemplate {
+	local list=$1
+	local screen=$2
+	cat <<TEMPLATE
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" saveSubsetFonts="1"><p:sldMasterIdLst><p:sldMasterId id="2147483656" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>${list}</p:sldIdLst>${screen}<p:notesSz cx="6858000" cy="9144000"/><p:defaultTextStyle><a:defPPr><a:defRPr lang="en-US"/></a:defPPr><a:lvl1pPr marL="0" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1"><a:defRPr sz="1800" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl1pPr><a:lvl2pPr marL="457200" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1"><a:defRPr sz="1800" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl2pPr><a:lvl3pPr marL="914400" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1"><a:defRPr sz="1800" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl3pPr><a:lvl4pPr marL="1371600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1"><a:defRPr sz="1800" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl4pPr><a:lvl5pPr marL="1828800" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1"><a:defRPr sz="1800" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl5pPr><a:lvl6pPr marL="2286000" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1"><a:defRPr sz="1800" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl6pPr><a:lvl7pPr marL="2743200" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1"><a:defRPr sz="1800" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl7pPr><a:lvl8pPr marL="3200400" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1"><a:defRPr sz="1800" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl8pPr><a:lvl9pPr marL="3657600" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1"><a:defRPr sz="1800" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl9pPr></p:defaultTextStyle><p:extLst><p:ext uri="{EFAFB233-063F-42B5-8137-9DF3F51BA10A}"><p15:sldGuideLst xmlns:p15="http://schemas.microsoft.com/office/powerpoint/2012/main"/></p:ext></p:extLst></p:presentation>
+TEMPLATE
 }
 
 function make_slide {
-	cp ../slides/slide1.xml "../slides/slide-$1.xml"
-	"${sed}" "s/image1\.JPG/slide-$slide.png/g" ../slides/_rels/slide1.xml.rels > "../slides/_rels/slide-$1.xml.rels"
-	add_slide "$1"
+	local num=$1
+	local id=$((${1#0}+8))
+	local sid=$((${1#0}+256))
+
+	slideXmlTemplate "$num" > "../slides/slide-$num.xml"
+
+	slideXmlRelTemplate "$num" > "../slides/_rels/slide-$num.xml.rels"s
+
+	relationList+='<Relationship Id="rId'$id'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide-'$1'.xml"/>'
+	contentList+='<Override PartName="/ppt/slides/slide-'$1'.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>'
+	slideList+='<p:sldId id="'$sid'" r:id="rId'$id'"/>'
 }
 
 # temporary file is needed as explained here https://unix.stackexchange.com/questions/2690/how-to-redirect-output-of-wget-as-input-to-unzip
@@ -441,17 +466,24 @@ pdftoppm -r "$density" -scale-to-x 256 -scale-to-y -1 -singlefile -jpeg "$1" "$t
 mv "$tempname/docProps/thumbnail.jpg" "$tempname/docProps/thumbnail.jpeg"
 
 pushd "$tempname/ppt/media/" || exit 1
+	relationList=""
+	contentList=""
+	slideList=""
 	count=$(find . -maxdepth 1 -name "*.png" -printf '%i\n' | wc -l)
-	for slide in $(seq -w $count -1 1); do
-		echo "Processing $slide"
+	for slide in $(seq -w 1 "$count"); do
+		echo "Processing slide $slide"
 		make_slide "$slide"
 	done
 
 	if [ "$makeWide" = true ]; then
-		pat='<p:sldSz cx=\"9144000\" cy=\"6858000\" type=\"screen4x3\"\/>'
-		wscreen='<p:sldSz cy=\"6858000\" cx=\"12192000\"\/>'
-		"${sed}" -i'' "s/${pat}/${wscreen}/g" ../presentation.xml
+		screen='<p:sldSz cy="6858000" cx="12192000"/>'
+	else
+		screen='<p:sldSz cx="9144000" cy="6858000" type="screen4x3"/>'
 	fi
+
+	presentationXmlRelsTemplate "$relationList" > ../_rels/presentation.xml.rels
+	contentTypesXmlTemplate "$contentList" > ../../\[Content_Types\].xml
+	presentationXmlTemplate "$slideList" "$screen" > ../presentation.xml
 popd || exit 1
 
 pushd "$tempname" || exit 1
