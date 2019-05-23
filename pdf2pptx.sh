@@ -437,9 +437,9 @@ function make_slide {
 	local id=$((${1#0}+8))
 	local sid=$((${1#0}+256))
 
-	slideXmlTemplate "$num" > "../slides/slide-$num.xml"
+	slideXmlTemplate "$num" > "$tempname/ppt/slides/slide-$num.xml"
 
-	slideXmlRelTemplate "$num" > "../slides/_rels/slide-$num.xml.rels"s
+	slideXmlRelTemplate "$num" > "$tempname/ppt/slides/_rels/slide-$num.xml.rels"
 
 	relationList+='<Relationship Id="rId'$id'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide-'$1'.xml"/>'
 	contentList+='<Override PartName="/ppt/slides/slide-'$1'.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>'
@@ -465,11 +465,10 @@ fi
 pdftoppm -r "$density" -scale-to-x 256 -scale-to-y -1 -singlefile -jpeg "$1" "$tempname/docProps/thumbnail"
 mv "$tempname/docProps/thumbnail.jpg" "$tempname/docProps/thumbnail.jpeg"
 
-pushd "$tempname/ppt/media/" || exit 1
 	relationList=""
 	contentList=""
 	slideList=""
-	count=$(find . -maxdepth 1 -name "*.png" -printf '%i\n' | wc -l)
+	count=$(find "$tempname/ppt/media/" -maxdepth 1 -name "*.png" -printf '%i\n' | wc -l)
 	for slide in $(seq -w 1 "$count"); do
 		echo "Processing slide $slide"
 		make_slide "$slide"
@@ -481,12 +480,12 @@ pushd "$tempname/ppt/media/" || exit 1
 		screen='<p:sldSz cx="9144000" cy="6858000" type="screen4x3"/>'
 	fi
 
-	presentationXmlRelsTemplate "$relationList" > ../_rels/presentation.xml.rels
-	contentTypesXmlTemplate "$contentList" > ../../\[Content_Types\].xml
-	presentationXmlTemplate "$slideList" "$screen" > ../presentation.xml
-popd || exit 1
+	presentationXmlRelsTemplate "$relationList" > "$tempname/ppt/_rels/presentation.xml.rels"
+	contentTypesXmlTemplate "$contentList" > "$tempname/[Content_Types].xml"
+	presentationXmlTemplate "$slideList" "$screen" > "$tempname/ppt/presentation.xml"
 
-pushd "$tempname" || exit 1
 	rm -f "$fout"
+
+cd "$tempname" || exit 1
 	zip -q -r "$fout" .
-popd || exit 1
+
