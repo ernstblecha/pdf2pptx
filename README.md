@@ -14,7 +14,7 @@ Simply explained, I convert all the slides to high-quality image files first, an
 
 # Dependencies
 * You need `pdftoppm` from [poppler] (https://poppler.freedesktop.org/)
-* `zip`, `unzip` and `sed`
+* `zip` and `unzip`
 
 If you're using *Linux* you *probably* already have all the above.
 
