@@ -438,7 +438,6 @@ function make_slide {
 	local sid=$((${1#0}+256))
 
 	slideXmlTemplate "$num" > "$tempname/ppt/slides/slide-$num.xml"
-
 	slideXmlRelTemplate "$num" > "$tempname/ppt/slides/_rels/slide-$num.xml.rels"
 
 	relationList+='<Relationship Id="rId'$id'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide-'$1'.xml"/>'
@@ -454,7 +453,6 @@ templatedata | base64 -d > "$tempname/template.zip"
 unzip -q "$tempname/template.zip" -d "$tempname"
 rm "$tempname/template.zip"
 
-
 if pdftoppm -r "$density" -scale-to "$resolution" -png "$1" "$tempname/ppt/media/slide"; then
 	echo "Extraction successful!"
 else
@@ -465,27 +463,26 @@ fi
 pdftoppm -r "$density" -scale-to-x 256 -scale-to-y -1 -singlefile -jpeg "$1" "$tempname/docProps/thumbnail"
 mv "$tempname/docProps/thumbnail.jpg" "$tempname/docProps/thumbnail.jpeg"
 
-	relationList=""
-	contentList=""
-	slideList=""
-	count=$(find "$tempname/ppt/media/" -maxdepth 1 -name "*.png" -printf '%i\n' | wc -l)
-	for slide in $(seq -w 1 "$count"); do
-		echo "Processing slide $slide"
-		make_slide "$slide"
-	done
+relationList=""
+contentList=""
+slideList=""
+count=$(find "$tempname/ppt/media/" -maxdepth 1 -name "*.png" -printf '%i\n' | wc -l)
+for slide in $(seq -w 1 "$count"); do
+	echo "Processing slide $slide"
+	make_slide "$slide"
+done
 
-	if [ "$makeWide" = true ]; then
-		screen='<p:sldSz cy="6858000" cx="12192000"/>'
-	else
-		screen='<p:sldSz cx="9144000" cy="6858000" type="screen4x3"/>'
-	fi
+if [ "$makeWide" = true ]; then
+	screen='<p:sldSz cy="6858000" cx="12192000"/>'
+else
+	screen='<p:sldSz cx="9144000" cy="6858000" type="screen4x3"/>'
+fi
 
-	presentationXmlRelsTemplate "$relationList" > "$tempname/ppt/_rels/presentation.xml.rels"
-	contentTypesXmlTemplate "$contentList" > "$tempname/[Content_Types].xml"
-	presentationXmlTemplate "$slideList" "$screen" > "$tempname/ppt/presentation.xml"
+presentationXmlRelsTemplate "$relationList" > "$tempname/ppt/_rels/presentation.xml.rels"
+contentTypesXmlTemplate "$contentList" > "$tempname/[Content_Types].xml"
+presentationXmlTemplate "$slideList" "$screen" > "$tempname/ppt/presentation.xml"
 
-	rm -f "$fout"
+rm -f "$fout"
 
 cd "$tempname" || exit 1
-	zip -q -r "$fout" .
-
+zip -q -r "$fout" .
