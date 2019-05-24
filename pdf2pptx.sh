@@ -84,6 +84,15 @@ function presentationXmlTemplate {
 TEMPLATE
 }
 
+function coreXmlTemplate {
+	local author="pdf2pptx"
+	local datetime=$(date -Iseconds)
+	cat <<TEMPLATE
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>PowerPoint Presentation</dc:title><dc:creator>${author}</dc:creator><cp:lastModifiedBy>${author}</cp:lastModifiedBy><cp:revision>1</cp:revision><dcterms:created xsi:type="dcterms:W3CDTF">${datetime}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${datetime}</dcterms:modified></cp:coreProperties>
+TEMPLATE
+}
+
 function make_slide {
 	local num=$1
 	local id=$((${1#0}+8))
@@ -133,6 +142,7 @@ fi
 presentationXmlRelsTemplate "$relationList" > "$tempname/ppt/_rels/presentation.xml.rels"
 contentTypesXmlTemplate "$contentList" > "$tempname/[Content_Types].xml"
 presentationXmlTemplate "$slideList" "$screen" > "$tempname/ppt/presentation.xml"
+coreXmlTemplate > "$tempname/docProps/core.xml"
 
 rm -f "$fout"
 
