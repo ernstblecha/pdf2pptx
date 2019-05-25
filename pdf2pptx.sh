@@ -5,6 +5,30 @@ resolution=1024
 density=300
 makeWide=true
 
+if ! hash pdftoppm 2>/dev/null; then
+	echo "pdftoppm not available!"; exit 1
+fi
+
+if ! hash seq 2>/dev/null; then
+	echo "seq not available!"; exit 1
+fi
+
+if ! hash zip 2>/dev/null; then
+	echo "zip not available!"; exit 1
+fi
+
+if ! hash unzip 2>/dev/null; then
+	echo "unzip not available!"; exit 1
+fi
+
+if ! hash basename 2>/dev/null; then
+	echo "basename not available!"; exit 1
+fi
+
+if ! hash basename 2>/dev/null; then
+	echo "base64 not available!"; exit 1
+fi
+
 if [ $# -eq 0 ]; then
 	echo "No arguments supplied!"
 	echo "Usage: ./pdf2pptx.sh file.pdf"
