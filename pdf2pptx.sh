@@ -3,10 +3,18 @@
 
 resolution=1024
 density=300
+#colorspace="-depth 8"
+colorspace="-colorspace sRGB -background white -alpha remove"
 makeWide=true
+usepdftoppm=true
 
 if ! hash pdftoppm 2>/dev/null; then
-	echo "pdftoppm not available!"; exit 1
+	echo "pdftoppm not available!"
+	usepdftoppm=false
+	if ! hash convert 2>/dev/null; then
+		echo "convert not available"
+		exit 1
+	fi
 fi
 
 if ! hash seq 2>/dev/null; then
@@ -139,24 +147,42 @@ templatedata | base64 -d > "$tempname/template.zip"
 unzip -q "$tempname/template.zip" -d "$tempname"
 rm "$tempname/template.zip"
 
-if pdftoppm -r "$density" -scale-to "$resolution" -png "$1" "$tempname/ppt/media/slide"; then
-	echo "Extraction successful!"
+if $usepdftoppm; then
+	if pdftoppm -r "$density" -scale-to "$resolution" -png "$1" "$tempname/ppt/media/slide"; then
+		echo "Extraction successful!"
+	else
+		echo "Error during extraction"; exit 1
+	fi
+	pdftoppm -r "$density" -scale-to-x 256 -scale-to-y -1 -singlefile -jpeg "$1" "$tempname/docProps/thumbnail"
+	mv "$tempname/docProps/thumbnail.jpg" "$tempname/docProps/thumbnail.jpeg"
 else
-	echo "Error during extraction"
-	exit 1
+	# $colorspace may contain multiple parameters passed to convert
+	# shellcheck disable=SC2086
+	if convert -density "$density" $colorspace -resize "x${resolution}" "$1" "$tempname/ppt/media/slide.png"; then
+		echo "Extraction successful!"
+	else
+		echo "Error during extraction"; exit 1
+	fi
+	# $colorspace may contain multiple parameters passed to convert
+	# shellcheck disable=SC2086
+	convert -density "$density" $colorspace -resize 256x "$1" "$tempname/docProps/thumbnail.jpeg"
 fi
-
-pdftoppm -r "$density" -scale-to-x 256 -scale-to-y -1 -singlefile -jpeg "$1" "$tempname/docProps/thumbnail"
-mv "$tempname/docProps/thumbnail.jpg" "$tempname/docProps/thumbnail.jpeg"
 
 relationList=""
 contentList=""
 slideList=""
 count=$(find "$tempname/ppt/media/" -maxdepth 1 -name "*.png" -printf '%i\n' | wc -l)
-for slide in $(seq -w 1 "$count"); do
-	echo "Processing slide $slide"
-	make_slide "$slide"
-done
+if $usepdftoppm; then
+	for slide in $(seq -w 1 "$count"); do
+		echo "Processing slide $slide"
+		make_slide "$slide"
+	done
+else
+	for slide in $(seq 1 "$count"); do
+		echo "Processing slide $slide"
+		make_slide "$slide"
+	done
+fi
 
 if [ "$makeWide" = true ]; then
 	screen='<p:sldSz cy="6858000" cx="12192000"/>'
