@@ -53,4 +53,5 @@ Now it should work. Note that modifying the policy file would require `root` pri
 
 # Acknowledgement
 Thanks to [Melissa O'Neill](https://www.cs.hmc.edu/~oneill/freesoftware/pdftokeynote.html) for providing a Pdf2Keynote tool for mac which has motivated this small project!
+
 Thanks to [Alireza Shafaei](https://github.com/ashafaei/pdf2pptx) for creating the base version of this fork
